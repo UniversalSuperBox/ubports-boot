@@ -5,6 +5,8 @@ pre_mountroot()
 	[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/local-top"
 	run_scripts /scripts/local-top
 	[ "$quiet" != "y" ] && log_end_msg
+	# Support /dev/block/mmcXXX mount points
+	ln -s . /dev/block
 }
 
 identify_boot_mode()
