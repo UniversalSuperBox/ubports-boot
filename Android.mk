@@ -56,7 +56,7 @@ ifneq ($(words $(UBPORTS_BOOT_PART))$(words $(UBPORTS_DATA_PART)),11)
 $(error There should be a one and only one device entry for UBPORTS_BOOT_PART and UBPORTS_DATA_PART)
 endif
 
-UBPORTS_BOOTIMG_COMMANDLINE += datapart=$(UBPORTS_DATA_PART)
+#UBPORTS_BOOTIMG_COMMANDLINE += datapart=$(UBPORTS_DATA_PART)
 
 
 ifneq ($(strip $(TARGET_NO_KERNEL)),true)
@@ -102,10 +102,9 @@ LOCAL_MODULE_PATH := $(PRODUCT_OUT)
 include $(BUILD_SYSTEM)/base_rules.mk
 UBPORTS_BOOT_INTERMEDIATE := $(call intermediates-dir-for,ROOT,$(LOCAL_MODULE),)
 
-#UBPORTS_BOOT_RAMDISK := $(UBPORTS_BOOT_INTERMEDIATE)/ubports-initramfs.gz
-UBPORTS_BOOT_RAMDISK := $(LOCAL_PATH)/ubports-initramfs.gz
-UBPORTS_BOOT_RAMDISK_SRC := $(LOCAL_PATH)/initramfs
-UBPORTS_BOOT_RAMDISK_FILES := $(shell find $(UBPORTS_BOOT_RAMDISK_SRC) -type f)
+.PHONY: UBPORTS_BOOT_RAMDISK
+UBPORTS_BOOT_RAMDISK := $(UBPORTS_BOOT_INTERMEDIATE)/ubports-initramfs.gz
+GET_INITRD := $(LOCAL_PATH)/get-initrd.sh
 
 $(LOCAL_BUILT_MODULE): $(INSTALLED_KERNEL_TARGET) $(UBPORTS_BOOT_RAMDISK) $(BOOTIMAGE_EXTRA_DEPS)
 	@echo "Making ubports-boot.img in $(dir $@) using $(INSTALLED_KERNEL_TARGET) $(UBPORTS_BOOT_RAMDISK)"
@@ -117,16 +116,9 @@ else
 	@mkbootimg --ramdisk $(UBPORTS_BOOT_RAMDISK) $(UBPORTS_BOOTIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@
 endif
 
-$(UBPORTS_BOOT_RAMDISK): $(UBPORTS_BOOT_RAMDISK_FILES)
-	@echo "Making initramfs : $@"
-	@rm -rf $(UBPORTS_BOOT_INTERMEDIATE)/initramfs
-	@mkdir -p $(UBPORTS_BOOT_INTERMEDIATE)/initramfs
-	@cp -a $(UBPORTS_BOOT_RAMDISK_SRC)/*  $(UBPORTS_BOOT_INTERMEDIATE)/initramfs
-ifeq ($(BOARD_CUSTOM_MKBOOTIMG),pack_intel)
-	@(cd $(UBPORTS_BOOT_INTERMEDIATE)/initramfs && find . | cpio -H newc -o ) | $(MINIGZIP) > $(UBPORTS_BOOT_RAMDISK)
-else
-	@(cd $(UBPORTS_BOOT_INTERMEDIATE)/initramfs && find . | cpio -H newc -o ) | gzip -9 > $@
-endif
+$(UBPORTS_BOOT_RAMDISK):
+	@echo "Downloading initramfs to : $@"
+	@$(GET_INITRD) ${TARGET_KERNEL_ARCH} $@
 
 .PHONY: ubports-common
 
