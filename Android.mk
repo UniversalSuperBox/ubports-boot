@@ -103,7 +103,12 @@ endif
 
 $(UBPORTS_BOOT_RAMDISK):
 	@echo "Downloading initramfs to : $@"
+ifdef BOARD_USE_LOCAL_INITRD
+	@echo "Using local initramfs at device/*/$(TARGET_DEVICE)/initramfs.gz"
+	@cp device/*/$(TARGET_DEVICE)/initramfs.gz $@
+else
 	@$(GET_INITRD) ${TARGET_KERNEL_ARCH} $@
+endif
 
 .PHONY: ubports-common
 
